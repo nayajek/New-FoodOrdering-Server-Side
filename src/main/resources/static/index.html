@@ -1,10 +1,197 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>New Food Ordering</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background-color: #f8f9fa;
+            color: #212529;
+        }
+        header {
+            background-color: grey;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 {
+            margin: 0;
+            font-size: 2.5rem;
+        }
+        nav {
+            background-color: #009bb3;
+            padding: 10px 0;
+            border-bottom: 2px solid #333;
+        }
+        nav ul {
+            list-style-type: none;
+            padding: 0;
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+        }
+        nav li {
+            margin: 0;
+        }
+        nav button {
+            color: white;
+            background: none;
+            border: none;
+            text-decoration: none;
+            font-size: 1.2rem;
+            padding: 10px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        nav button:hover {
+            background-color: #00fbff;
+            color: #0056b3;
+        }
+        main {
+            padding: 20px;
+            min-height: 80vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #333;
+            color: white;
+            position: relative;
+        }
+        .menu-list {
+            width: 80%;
+            max-width: 600px;
+            margin-top: 20px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .menu-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 10px;
+            border-bottom: 1px solid #ddd;
+        }
+        .menu-item:last-child {
+            border-bottom: none;
+        }
+    </style>
 </head>
 <body>
-$END$
+<header>
+    <h1>New Food Ordering</h1>
+</header>
+<nav>
+    <ul>
+        <li><button onclick="fetchCustomers()">Customers</button></li>
+        <li><button onclick="fetchMenuItems()">Menu Items</button></li>
+        <li><button onclick="fetchOrders()">Orders</button></li>
+        <li><button onclick="fetchRestaurants()">Restaurants</button></li>
+    </ul>
+</nav>
+<main>
+    <h2>Welcome to the New Food Ordering</h2>
+    <p>Select one of the buttons above to interact with the API endpoints.</p>
+    <div id="output" class="menu-list"></div>
+</main>
+<footer>
+    <p>© 2024 New Food Ordering. All Rights Reserved.</p>
+</footer>
+<script>
+    const API_BASE_URL = "http://localhost:8080/New-FoodOrdering";
+
+    // Fetch and display menu items
+    async function fetchMenuItems() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<p>Loading menu items...</p>";
+        try {
+            const response = await fetch(`${API_BASE_URL}/menu_items/all`);
+            if (!response.ok) throw new Error("Failed to fetch menu items");
+            const menuItems = await response.json();
+
+            output.innerHTML = `<h3>Menu Items</h3>`;
+            menuItems.forEach(item => {
+                const div = document.createElement("div");
+                div.className = "menu-item";
+                div.innerHTML = `
+                    <span><strong>${item.name}</strong> - $${item.price.toFixed(2)}</span>
+                    <span>${item.description || "No description available"}</span>
+                `;
+                output.appendChild(div);
+            });
+        } catch (error) {
+            console.error(error);
+            output.innerHTML = `<p style="color: red;">Error loading menu items. Please try again.</p>`;
+        }
+    }
+
+    // Other example functions for fetching Customers, Orders, and Restaurants
+    async function fetchCustomers() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<p>Loading customers...</p>";
+        try {
+            const response = await fetch(`${API_BASE_URL}/users/all`);
+            if (!response.ok) throw new Error("Failed to fetch customers");
+            const customers = await response.json();
+            output.innerHTML = `<h3>Customers</h3>`;
+            customers.forEach(customer => {
+                const div = document.createElement("div");
+                div.innerHTML = `<p>${customer.name} - ${customer.email}</p>`;
+                output.appendChild(div);
+            });
+        } catch (error) {
+            console.error(error);
+            output.innerHTML = `<p style="color: red;">Error loading customers. Please try again.</p>`;
+        }
+    }
+
+    async function fetchOrders() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<p>Loading orders...</p>";
+        try {
+            const response = await fetch(`${API_BASE_URL}/orders/all`);
+            if (!response.ok) throw new Error("Failed to fetch orders");
+            const orders = await response.json();
+            output.innerHTML = `<h3>Orders</h3>`;
+            orders.forEach(order => {
+                const div = document.createElement("div");
+                div.innerHTML = `<p>Order ID: ${order.id} | Total: $${order.totalAmount}</p>`;
+                output.appendChild(div);
+            });
+        } catch (error) {
+            console.error(error);
+            output.innerHTML = `<p style="color: red;">Error loading orders. Please try again.</p>`;
+        }
+    }
+
+    async function fetchRestaurants() {
+        const output = document.getElementById("output");
+        output.innerHTML = "<p>Loading restaurants...</p>";
+        try {
+            const response = await fetch(`${API_BASE_URL}/restaurants/all`);
+            if (!response.ok) throw new Error("Failed to fetch restaurants");
+            const restaurants = await response.json();
+            output.innerHTML = `<h3>Restaurants</h3>`;
+            restaurants.forEach(restaurant => {
+                const div = document.createElement("div");
+                div.innerHTML = `<p>${restaurant.name} - ${restaurant.location}</p>`;
+                output.appendChild(div);
+            });
+        } catch (error) {
+            console.error(error);
+            output.innerHTML = `<p style="color: red;">Error loading restaurants. Please try again.</p>`;
+        }
+    }
+</script>
 </body>
 </html>

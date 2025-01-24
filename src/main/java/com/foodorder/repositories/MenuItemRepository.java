@@ -1,4 +1,7 @@
 package com.foodorder.repositories;
 
-public class MenuItemRepository {
+import com.foodorder.models.Menu_Items;
+import org.springframework.data.jpa.repository.JpaRepository;
+
+public interface MenuItemRepository extends JpaRepository<Menu_Items, Long> {
 }

@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 @SpringBootApplication
 public class NewFoodOrderingServerSideApplication {
 
-	public static void main(String[] args) {
-		SpringApplication.run(NewFoodOrderingServerSideApplication.class, args);
-	}
+    public static void main(String[] args) {
+        SpringApplication.run(NewFoodOrderingServerSideApplication.class, args);
+    }
 
 }

@@ -1,1 +1,40 @@
 services:
+  mysql-db:
+    image: mysql:8.0
+    container_name: mysql-db
+    environment:
+      MYSQL_ROOT_PASSWORD: admin123
+      MYSQL_DATABASE: food_ordering_db
+      MYSQL_USER: admin
+      MYSQL_PASSWORD: admin123
+    ports:
+      - "3306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  food-ordering-app:
+    image: food-ordering-app:latest
+    container_name: food-ordering-app
+    ports:
+      - "8080:8080"
+    environment:
+      - spring.datasource.url=jdbc:mysql://mysql-db:3306/food-ordering-db
+      - spring.datasource.username=admin
+      - spring.datasource.password=admin123
+      - spring.jpa.hibernate.ddl-auto=update
+      - spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+      - server.servlet.context-path=/New-FoodOrdering
+      - logging.level.org.springframework=DEBUG
+      - logging.level.org.hibernate.SQL=DEBUG
+      - spring.jpa.show-sql=true
+    depends_on:
+      - mysql-db
+    restart: always
+
+volumes:
+  mysql-data:
