@@ -123,6 +123,82 @@
         .menu-item:last-child {
             border-bottom: none;
         }
+        .home-image {
+            width: 80%;
+            max-width: 600px;
+            margin-top: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .order-summary {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 800px;
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 15px;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        .order-summary {
+            margin-top: 20px;
+            width: 100%;
+            max-width: 600px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            padding: 10px;
+            background-color: white;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        }
+        footer {
+            text-align: center;
+            padding: 15px;
+            background-color: #333;
+            color: white;
+        }
+        .order-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+            font-size: 1rem;
+            background-color: #fff;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            border-radius: 5px;
+            overflow: hidden;
+        }
+
+        .order-table th, .order-table td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+
+        .order-table th {
+            background-color: #f2f2f2;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .order-table tr:nth-child(even) {
+            background-color: #f9f9f9;
+        }
+
+        .order-table tr:hover {
+            background-color: #f1f1f1;
+        }
+
+        .order-table td {
+            text-align: center;
+        }
+
+        .order-table td:nth-child(7),
+        .order-table td:nth-child(8) {
+            text-align: right;
+        }
+
+        .order-table td:nth-child(6) {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
@@ -131,6 +207,7 @@
 </header>
 <nav>
     <ul>
+        <li><button onclick="showPage('home')">Home</button></li>
         <li><button onclick="fetchCustomers()">Customers</button></li>
         <li><button onclick="fetchMenuItems()">Menu Items</button></li>
         <li><button onclick="fetchOrders()">Orders</button></li>
@@ -138,9 +215,13 @@
     </ul>
 </nav>
 <main>
+    <div id="home-content">
     <h2>Welcome to the New Food Ordering</h2>
-    <p>Select one of the buttons above to interact with the API endpoints.</p>
+    <!--<p>Select one of the buttons above to interact with the API endpoints.</p>-->
+        <img src="images/home%20page%20image.png" alt="Delicious Food" class="home-image">
 
+    </div>
+    <div id="dynamic-content" style="display: none;"></div>
     <div id="output" class="menu-list"></div>
 </main>
 <footer>
@@ -148,6 +229,7 @@
 </footer>
 <script>
     const API_BASE_URL = "http://localhost:8080/New-FoodOrdering";
+
     let activeSection = "menu_items";
 
     function setActiveSection(section) {
@@ -155,6 +237,55 @@
         document.getElementById("section-title").innerText = `Manage ${section.replace("_", " ")}`;
         fetchItems();
     }
+
+    function showPage(page) {
+        const homeContent = document.getElementById('home-content');
+        const dynamicContent = document.getElementById('dynamic-content');
+
+        if (page === 'home') {
+            homeContent.style.display = 'block';
+            dynamicContent.style.display = 'none';
+        } else {
+            homeContent.style.display = 'none';
+            dynamicContent.style.display = 'block';
+
+            loadPageContent(page);
+        }
+    }
+
+
+    async function loadPageContent(page) {
+        const dynamicContent = document.getElementById('dynamic-content');
+        dynamicContent.innerHTML = `<p>Loading ${page}...</p>`;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/${page}/all`);
+            if (!response.ok) throw new Error("Failed to fetch data");
+            const items = await response.json();
+
+            // Render the content dynamically
+            dynamicContent.innerHTML = `<h3>${page.replace('_', ' ').toUpperCase()}</h3>`;
+            const listContainer = document.createElement('div');
+            listContainer.className = 'list-container';
+
+            items.forEach(item => {
+                const div = document.createElement('div');
+                div.className = 'list-item';
+                div.innerHTML = `
+                <span>${item.name || item.id} - ${item.description || item.location || item.email || ""}</span>
+            `;
+                listContainer.appendChild(div);
+            });
+
+            dynamicContent.appendChild(listContainer);
+        } catch (error) {
+            console.error(error);
+            dynamicContent.innerHTML = `<p style="color: red;">Error loading ${page}.</p>`;
+        }
+    }
+
+    // Load the home page by default
+    showPage('home');
 
     async function fetchItems() {
         const listContainer = document.getElementById("list-container");
@@ -246,29 +377,108 @@
     // Fetch and display menu items
     async function fetchMenuItems() {
         const output = document.getElementById("output");
-        output.innerHTML = "<p>Loading menu items...</p>";
+        output.innerHTML = `
+            <h3>Manage Menu Items</h3>
+            <div class="form-container">
+                <h4>Add / Update Menu Item</h4>
+                <input type="hidden" id="menuItemId" />
+                <input type="text" id="menuItemName" placeholder="Name" />
+                <input type="number" id="menuItemPrice" placeholder="Price" step="0.01" />
+                <input type="text" id="menuItemDescription" placeholder="Description" />
+                <button onclick="saveMenuItem()">Save</button>
+                <button onclick="clearForm()">Clear</button>
+            </div>
+            <div class="list-container" id="menuItemList"></div>
+        `;
+
+        const menuItemList = document.getElementById("menuItemList");
+        menuItemList.innerHTML = "<p>Loading...</p>";
         try {
             const response = await fetch(`${API_BASE_URL}/menu_items/all`);
             if (!response.ok) throw new Error("Failed to fetch menu items");
             const menuItems = await response.json();
 
-            output.innerHTML = `<h3>Menu Items</h3>`;
+            menuItemList.innerHTML = "";
             menuItems.forEach(item => {
                 const div = document.createElement("div");
-                div.className = "menu-item";
+                div.className = "list-item";
                 div.innerHTML = `
-                    <span><strong>${item.name}</strong> - $${item.price.toFixed(2)}</span>
-                    <span>${item.description || "No description available"}</span>
+                    <span>${item.name} - $${item.price.toFixed(2)} - ${item.description || "N/A"}</span>
+                    <div>
+                        <button onclick="editMenuItem(${item.id}, '${item.name}', ${item.price}, '${item.description || ""}')">Edit</button>
+                        <button onclick="deleteMenuItem(${item.id})">Delete</button>
+                    </div>
                 `;
-                output.appendChild(div);
+                menuItemList.appendChild(div);
             });
         } catch (error) {
             console.error(error);
-            output.innerHTML = `<p style="color: red;">Error loading menu items. Please try again.</p>`;
+            menuItemList.innerHTML = `<p style="color: red;">Error loading menu items. Please try again.</p>`;
         }
     }
 
-    // Other example functions for fetching Customers, Orders, and Restaurants
+    async function saveMenuItem() {
+        const menuItemId = document.getElementById("menuItemId").value;
+        const name = document.getElementById("menuItemName").value;
+        const price = document.getElementById("menuItemPrice").value;
+        const description = document.getElementById("menuItemDescription").value;
+
+        if (!name || !price) {
+            alert("Name and Price are required.");
+            return;
+        }
+
+        const payload = { name, price: parseFloat(price), description };
+        const url = menuItemId ? `${API_BASE_URL}/menu_items/update/${menuItemId}` : `${API_BASE_URL}/menu_items/add`;
+        const method = menuItemId ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error("Failed to save menu item");
+            alert(menuItemId ? "Menu item updated successfully!" : "Menu item added successfully!");
+            clearForm();
+            fetchMenuItems();
+        } catch (error) {
+            console.error(error);
+            alert("Error saving menu item. Please try again.");
+        }
+    }
+
+    function editMenuItem(id, name, price, description) {
+        document.getElementById("menuItemId").value = id;
+        document.getElementById("menuItemName").value = name;
+        document.getElementById("menuItemPrice").value = price;
+        document.getElementById("menuItemDescription").value = description;
+    }
+
+    async function deleteMenuItem(id) {
+        if (!confirm("Are you sure you want to delete this menu item?")) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/menu_items/delete/${id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) throw new Error("Failed to delete menu item");
+            alert("Menu item deleted successfully!");
+            fetchMenuItems();
+        } catch (error) {
+            console.error(error);
+            alert("Error deleting menu item. Please try again.");
+        }
+    }
+
+    function clearForm() {
+        document.getElementById("menuItemId").value = "";
+        document.getElementById("menuItemName").value = "";
+        document.getElementById("menuItemPrice").value = "";
+        document.getElementById("menuItemDescription").value = "";
+    }
+
+    // function for fetching Customers
     async function fetchCustomers() {
         const output = document.getElementById("output");
         output.innerHTML = `
@@ -380,34 +590,74 @@
 
     async function fetchOrdersPage() {
         const output = document.getElementById("output");
-        output.innerHTML = "<p>Loading orders page...</p>";
+
+        // Setup the layout for the Orders page
+        output.innerHTML = `
+            <h3>Place an Order</h3>
+            <div>
+                <label for="select-user">Select User:</label>
+                <select id="select-user"></select>
+                <label for="select-restaurant">Select Restaurant:</label>
+                <select id="select-restaurant"></select>
+            </div>
+            <h3>Menu Items</h3>
+            <div id="menu-items-container" class="menu-list"></div>
+            <h3>Your Order</h3>
+            <div id="order-summary" class="order-summary"></div>
+            <button onclick="submitOrder()" style="margin-top: 10px;">Submit Order</button>
+            <h3>Order History</h3>
+            <div id="order-history" class="order-history"></div>
+        `;
+
+        await loadUsersAndRestaurants(); // Load users and restaurants
+        await loadMenuItems();           // Load menu items
+        await loadOrderHistory();        // Load order history
+    }
+
+    async function loadUsersAndRestaurants() {
+        const userSelect = document.getElementById("select-user");
+        const restaurantSelect = document.getElementById("select-restaurant");
+
         try {
-            const menuItemsResponse = await fetch(`${API_BASE_URL}/menu_items/all`);
-            if (!menuItemsResponse.ok) throw new Error("Failed to fetch menu items");
-            const menuItems = await menuItemsResponse.json();
+            const [usersResponse, restaurantsResponse] = await Promise.all([
+                fetch(`${API_BASE_URL}/users/all`),
+                fetch(`${API_BASE_URL}/restaurants/all`),
+            ]);
 
-            output.innerHTML = `
-                <h3>Menu Items</h3>
-                <div id="menu-items-container" class="menu-list"></div>
-                <h3>Your Order</h3>
-                <div id="order-summary" class="menu-list"></div>
-                <button onclick="submitOrder()" style="margin-top: 10px;">Submit Order</button>
-            `;
+            if (!usersResponse.ok || !restaurantsResponse.ok) {
+                throw new Error("Failed to load users or restaurants.");
+            }
 
-            const menuItemsContainer = document.getElementById("menu-items-container");
-            menuItems.forEach(item => {
-                const div = document.createElement("div");
-                div.className = "menu-item";
-                div.innerHTML = `
-                    <span><strong>${item.name}</strong> - $${item.price.toFixed(2)}</span>
-                    <span>${item.description || "No description available"}</span>
-                    <button onclick="addToOrder(${item.id}, '${item.name}', ${item.price})">Add to Order</button>
-                `;
-                menuItemsContainer.appendChild(div);
-            });
+            const users = await usersResponse.json();
+            const restaurants = await restaurantsResponse.json();
+
+            userSelect.innerHTML = users.map(user => `<option value="${user.id}">${user.name}</option>`).join("");
+            restaurantSelect.innerHTML = restaurants.map(restaurant => `<option value="${restaurant.id}">${restaurant.name}</option>`).join("");
         } catch (error) {
-            console.error(error);
-            output.innerHTML = `<p style="color: red;">Error loading orders page. Please try again.</p>`;
+            console.error("Error loading users and restaurants:", error);
+        }
+    }
+
+    async function loadMenuItems() {
+        const menuItemsContainer = document.getElementById("menu-items-container");
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/menu_items/all`);
+            if (!response.ok) throw new Error("Failed to load menu items.");
+
+            const menuItems = await response.json();
+
+            menuItemsContainer.innerHTML = menuItems
+                .map(item => `
+                    <div class="menu-item">
+                        <span>${item.name} - $${item.price.toFixed(2)}</span>
+                        <button onclick="addToOrder(${item.id}, '${item.name}', ${item.price})">Add</button>
+                    </div>
+                `)
+                .join("");
+        } catch (error) {
+            console.error("Error loading menu items:", error);
+            menuItemsContainer.innerHTML = `<p style="color: red;">Error loading menu items. Please try again.</p>`;
         }
     }
 
@@ -423,32 +673,24 @@
 
     function renderOrderSummary() {
         const orderSummary = document.getElementById("order-summary");
-        orderSummary.innerHTML = "";
-        let totalAmount = 0;
 
-        currentOrder.forEach(item => {
-            const itemTotal = item.price * item.quantity;
-            totalAmount += itemTotal;
+        if (currentOrder.length === 0) {
+            orderSummary.innerHTML = "<p>No items in the order.</p>";
+            return;
+        }
 
-            const div = document.createElement("div");
-            div.className = "menu-item";
-            div.innerHTML = `
-                <span>${item.name} - $${item.price.toFixed(2)} x ${item.quantity}</span>
-                <div>
-                    <button onclick="updateQuantity(${item.id}, -1)">-</button>
-                    <span>${item.quantity}</span>
-                    <button onclick="updateQuantity(${item.id}, 1)">+</button>
+        orderSummary.innerHTML = currentOrder
+            .map(item => `
+                <div class="menu-item">
+                    <span>${item.name} - $${item.price.toFixed(2)} x ${item.quantity}</span>
+                    <div>
+                        <button onclick="updateQuantity(${item.id}, -1)">-</button>
+                        <button onclick="updateQuantity(${item.id}, 1)">+</button>
+                        <button onclick="removeFromOrder(${item.id})">Remove</button>
+                    </div>
                 </div>
-                <span>$${itemTotal.toFixed(2)}</span>
-                <button onclick="removeFromOrder(${item.id})">Remove</button>
-            `;
-            orderSummary.appendChild(div);
-        });
-
-        const totalDiv = document.createElement("div");
-        totalDiv.className = "menu-item";
-        totalDiv.innerHTML = `<strong>Total: $${totalAmount.toFixed(2)}</strong>`;
-        orderSummary.appendChild(totalDiv);
+            `)
+            .join("");
     }
 
     function updateQuantity(id, delta) {
@@ -468,16 +710,21 @@
     }
 
     async function submitOrder() {
-        if (currentOrder.length === 0) {
-            alert("Your order is empty. Add items before submitting.");
+        const userId = document.getElementById("select-user").value;
+        const restaurantId = document.getElementById("select-restaurant").value;
+
+        if (!userId || !restaurantId || currentOrder.length === 0) {
+            alert("Please select a user, a restaurant, and add items to the order.");
             return;
         }
 
         const orderPayload = {
+            userId,
+            restaurantId,
             items: currentOrder,
             orderDate: new Date().toISOString(),
             totalAmount: currentOrder.reduce((total, item) => total + item.price * item.quantity, 0),
-            status: "Pending"
+            status: "Pending",
         };
 
         try {
@@ -486,38 +733,187 @@
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(orderPayload),
             });
-            if (!response.ok) throw new Error("Failed to submit order");
+
+            if (!response.ok) throw new Error("Failed to submit order.");
+
             alert("Order submitted successfully!");
             currentOrder = [];
             renderOrderSummary();
+            await loadOrderHistory(); // Refresh order history
         } catch (error) {
-            console.error(error);
-            alert("Error submitting order. Please try again.");
+            console.error("Error submitting order:", error);
+        }
+    }
+
+    async function loadOrderHistory() {
+        const orderHistoryContainer = document.getElementById("order-history");
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/orders/all`);
+            if (!response.ok) throw new Error("Failed to load order history.");
+
+            const orders = await response.json();
+
+            if (orders.length === 0) {
+                orderHistoryContainer.innerHTML = "<p>No orders have been submitted yet.</p>";
+                return;
+            }
+
+            // Create a table structure for displaying orders
+            let tableHTML = `
+            <table class="order-table">
+                <thead>
+                    <tr>
+                        <th>Order #</th>
+                        <th>User</th>
+                        <th>Email</th>
+                        <th>Menu Item</th>
+                        <th>Restaurant</th>
+                        <th>Order Date</th>
+                        <th>Total</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+        `;
+
+            // Populate the table rows
+            orders.forEach(order => {
+                const menuItems = (order.menuItems && Array.isArray(order.menuItems))
+                    ? order.menuItems.join(", ")
+                    : "Unknown Item";
+                tableHTML += `
+                <tr>
+                    <td>${order.orderId}</td>
+                    <td>${order.userName || "Guest"}</td>
+                    <td>${order.userEmail || "N/A"}</td>
+                    <td>${order.menuItems || "Unknown Item"}</td>
+                    <td>${order.restaurantName || "Unknown Restaurant"}</td>
+                    <td>${new Date(order.orderDate).toLocaleDateString()}</td>
+                    <td>$${parseFloat(order.totalAmount).toFixed(2)}</td>
+                    <td>${order.status || "Pending"}</td>
+                </tr>
+            `;
+            });
+
+            tableHTML += `
+                </tbody>
+            </table>
+        `;
+
+            // Set the table in the container
+            orderHistoryContainer.innerHTML = tableHTML;
+        } catch (error) {
+            console.error("Error loading order history:", error);
+            orderHistoryContainer.innerHTML = `<p style="color: red;">Error loading order history. Please try again.</p>`;
         }
     }
 
     function fetchOrders() {
-        document.getElementById("output").innerHTML = "";
         fetchOrdersPage();
     }
 
+    // Load the Orders page on button click
+    fetchOrders();
+
+
     async function fetchRestaurants() {
         const output = document.getElementById("output");
-        output.innerHTML = "<p>Loading restaurants...</p>";
+        output.innerHTML = `
+            <h3>Manage Restaurants</h3>
+            <div class="form-container">
+                <h4>Add / Update Restaurant</h4>
+                <input type="hidden" id="restaurantId" />
+                <input type="text" id="restaurantName" placeholder="Name" />
+                <input type="text" id="restaurantLocation" placeholder="Location" />
+                <button onclick="saveRestaurant()">Save</button>
+                <button onclick="clearForm()">Clear</button>
+            </div>
+            <div class="list-container" id="restaurantList"></div>
+        `;
+
+        const restaurantList = document.getElementById("restaurantList");
+        restaurantList.innerHTML = "<p>Loading...</p>";
         try {
             const response = await fetch(`${API_BASE_URL}/restaurants/all`);
             if (!response.ok) throw new Error("Failed to fetch restaurants");
             const restaurants = await response.json();
-            output.innerHTML = `<h3>Restaurants</h3>`;
+
+            restaurantList.innerHTML = "";
             restaurants.forEach(restaurant => {
                 const div = document.createElement("div");
-                div.innerHTML = `<p>${restaurant.name} - ${restaurant.location}</p>`;
-                output.appendChild(div);
+                div.className = "list-item";
+                div.innerHTML = `
+                    <span>${restaurant.name} - ${restaurant.location}</span>
+                    <div>
+                        <button onclick="editRestaurant(${restaurant.id}, '${restaurant.name}', '${restaurant.location}')">Edit</button>
+                        <button onclick="deleteRestaurant(${restaurant.id})">Delete</button>
+                    </div>
+                `;
+                restaurantList.appendChild(div);
             });
         } catch (error) {
             console.error(error);
-            output.innerHTML = `<p style="color: red;">Error loading restaurants. Please try again.</p>`;
+            restaurantList.innerHTML = `<p style="color: red;">Error loading restaurants. Please try again.</p>`;
         }
+    }
+
+    async function saveRestaurant() {
+        const restaurantId = document.getElementById("restaurantId").value;
+        const name = document.getElementById("restaurantName").value;
+        const location = document.getElementById("restaurantLocation").value;
+
+        if (!name || !location) {
+            alert("Name and Location are required.");
+            return;
+        }
+
+        const payload = { name, location };
+        const url = restaurantId ? `${API_BASE_URL}/restaurants/update/${restaurantId}` : `${API_BASE_URL}/restaurants/add`;
+        const method = restaurantId ? "PUT" : "POST";
+
+        try {
+            const response = await fetch(url, {
+                method,
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify(payload),
+            });
+            if (!response.ok) throw new Error("Failed to save restaurant");
+            alert(restaurantId ? "Restaurant updated successfully!" : "Restaurant added successfully!");
+            clearForm();
+            fetchRestaurants();
+        } catch (error) {
+            console.error(error);
+            alert("Error saving restaurant. Please try again.");
+        }
+    }
+
+    function editRestaurant(id, name, location) {
+        document.getElementById("restaurantId").value = id;
+        document.getElementById("restaurantName").value = name;
+        document.getElementById("restaurantLocation").value = location;
+    }
+
+    async function deleteRestaurant(id) {
+        if (!confirm("Are you sure you want to delete this restaurant?")) return;
+
+        try {
+            const response = await fetch(`${API_BASE_URL}/restaurants/delete/${id}`, {
+                method: "DELETE",
+            });
+            if (!response.ok) throw new Error("Failed to delete restaurant");
+            alert("Restaurant deleted successfully!");
+            fetchRestaurants();
+        } catch (error) {
+            console.error(error);
+            alert("Error deleting restaurant. Please try again.");
+        }
+    }
+
+    function clearForm() {
+        document.getElementById("restaurantId").value = "";
+        document.getElementById("restaurantName").value = "";
+        document.getElementById("restaurantLocation").value = "";
     }
 </script>
 </body>
